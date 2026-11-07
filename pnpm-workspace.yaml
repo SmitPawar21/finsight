@@ -1,0 +1,15 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# pnpm 10 blocks dependency install scripts by default (supply-chain safety).
+# Allow-list only what we trust and need.
+onlyBuiltDependencies:
+  - esbuild
+
+# Reviewed and deliberately NOT run:
+#  - cpu-features: optional native speed-up for ssh2 (testcontainers' SSH transport, unused)
+#  - protobufjs: postinstall is only a version-compatibility check
+ignoredBuiltDependencies:
+  - cpu-features
+  - protobufjs

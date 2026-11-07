@@ -1,0 +1,171 @@
+# FinSight local development stack.
+#   Core (default):           postgres (+pgvector), redis, s3 (RustFS) + bucket init
+#   Profile "observability":  Langfuse web + worker + ClickHouse
+# All ports bind to 127.0.0.1 only, so nothing is reachable from your LAN.
+# Defaults below are LOCAL-DEV ONLY credentials; override via a root .env file.
+name: finsight
+
+x-langfuse-env: &langfuse-env
+  DATABASE_URL: postgresql://${POSTGRES_USER:-finsight}:${POSTGRES_PASSWORD:-finsight}@postgres:5432/langfuse
+  SALT: ${LANGFUSE_SALT:-local-dev-salt-change-me}
+  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+  TELEMETRY_ENABLED: 'false'
+  CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+  CLICKHOUSE_URL: http://clickhouse:8123
+  CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
+  CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse}
+  CLICKHOUSE_CLUSTER_ENABLED: 'false'
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: us-east-1
+  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-finsight}
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-finsight-secret}
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://s3:9000
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: 'true'
+  LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: us-east-1
+  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-finsight}
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-finsight-secret}
+  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:9000
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: 'true'
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+  REDIS_HOST: redis
+  REDIS_PORT: '6379'
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg17-trixie
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-finsight}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finsight}
+      POSTGRES_DB: finsight
+    # Host port 5433 by default: a native PostgreSQL Windows service already owns 5432.
+    ports: ['127.0.0.1:${POSTGRES_PORT:-5433}:5432']
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d finsight']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.6-alpine
+    # noeviction: BullMQ (and Langfuse) keep job state in Redis. An evicting
+    # policy could silently delete queued jobs under memory pressure.
+    # appendonly: persist to disk so queued jobs survive a container restart.
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    ports: ['127.0.0.1:6379:6379']
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  s3:
+    # S3-compatible object store standing in for AWS S3 locally.
+    # (MinIO stopped publishing community images in 2025; RustFS is a drop-in.)
+    image: rustfs/rustfs:1.0.4
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-finsight}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-finsight-secret}
+      RUSTFS_ADDRESS: ':9000'
+      RUSTFS_CONSOLE_ENABLE: 'true'
+      RUSTFS_CONSOLE_ADDRESS: ':9001'
+    ports: ['127.0.0.1:9000:9000', '127.0.0.1:9001:9001']
+    volumes: [s3data:/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:9000/health || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  s3-init:
+    # One-shot job: create buckets idempotently, then exit 0.
+    image: amazon/aws-cli:2.39.5
+    depends_on:
+      s3: { condition: service_healthy }
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-finsight}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-finsight-secret}
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ['sh', '-c']
+    command:
+      - |
+        set -e
+        for b in finsight-lake langfuse; do
+          aws --endpoint-url http://s3:9000 s3api head-bucket --bucket "$$b" 2>/dev/null \
+            || aws --endpoint-url http://s3:9000 s3api create-bucket --bucket "$$b"
+          echo "bucket ready: $$b"
+        done
+    restart: 'no'
+
+  # ---------------- observability profile ----------------
+  clickhouse:
+    profiles: [observability]
+    image: clickhouse/clickhouse-server:26.8-alpine
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse}
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    volumes: [clickhousedata:/var/lib/clickhouse]
+    healthcheck:
+      # 127.0.0.1, not localhost: on Alpine, localhost resolves to IPv6 ::1 first,
+      # but ClickHouse listens on IPv4 here, so the check would always fail.
+      test: ['CMD-SHELL', 'wget --spider -q http://127.0.0.1:8123/ping || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  langfuse-worker:
+    profiles: [observability]
+    image: langfuse/langfuse-worker:3.227.0
+    depends_on: &langfuse-deps
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      clickhouse: { condition: service_healthy }
+      s3-init: { condition: service_completed_successfully }
+    environment:
+      <<: *langfuse-env
+    restart: unless-stopped
+
+  langfuse-web:
+    profiles: [observability]
+    image: langfuse/langfuse:3.227.0
+    depends_on: *langfuse-deps
+    ports: ['127.0.0.1:3100:3000']
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_URL: http://localhost:3100
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-local-dev-nextauth-secret}
+      # Headless init: org, project, API keys and a login, so no manual setup is needed.
+      LANGFUSE_INIT_ORG_ID: finsight
+      LANGFUSE_INIT_ORG_NAME: FinSight
+      LANGFUSE_INIT_PROJECT_ID: finsight-dev
+      LANGFUSE_INIT_PROJECT_NAME: finsight-dev
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-local-dev
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-local-dev
+      LANGFUSE_INIT_USER_EMAIL: dev@finsight.local
+      LANGFUSE_INIT_USER_NAME: FinSight Dev
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-finsight-dev-password}
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://$$(hostname -i):3000/api/public/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  s3data:
+  clickhousedata:

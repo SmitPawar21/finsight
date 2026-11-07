@@ -1,0 +1,6 @@
+# Normalise line endings: LF in the repo and working tree on every OS.
+# Without this, Windows checkouts get CRLF and Prettier --check fails in CI.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary

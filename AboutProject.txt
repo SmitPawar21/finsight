@@ -1,0 +1,206 @@
+# Project: FinSight AI — Intelligent Financial Research & Investment Analysis Platform
+
+I want to build an end-to-end AI Engineering project called **FinSight AI**. This is primarily a learning project. My objective is to develop a strong understanding of AI Engineering by implementing concepts from scratch wherever practical, understanding the underlying architecture, and gradually building a production-oriented AI application.
+
+I want you to act as my **AI Engineering mentor, technical architect and implementation guide** throughout this project.
+
+## 1. Project Goal
+
+Build an AI-powered financial research and investment analysis platform that acts as an intelligent research analyst.
+
+The platform should allow users to:
+- Ask natural-language questions about companies, stocks and financial markets.
+- Upload annual reports, financial statements and other financial documents.
+- Retrieve relevant information from documents and generate evidence-backed answers.
+- Analyse financial data and generate meaningful insights.
+- Execute multi-step financial research tasks using autonomous AI agents.
+- Perform portfolio analysis, risk assessment and basic predictive analytics.
+- Generate comprehensive financial research reports with supporting evidence.
+
+The primary objective is not to build another chatbot. It is to understand how modern AI systems are engineered, from data ingestion and preprocessing to model integration, retrieval, orchestration, evaluation, deployment and monitoring.
+
+## 2. Problem Statement
+
+Financial research involves analysing large amounts of structured and unstructured information, including annual reports, financial statements, market data and research documents.
+
+Manually extracting relevant information, connecting insights across multiple sources, performing financial calculations and generating research reports can be time-consuming.
+
+Traditional chatbots also have limitations:
+- They may generate unsupported or hallucinated financial information.
+- They cannot reliably retrieve information from large document collections without appropriate retrieval systems.
+- They lack the ability to independently execute complex, multi-step research tasks.
+- Their outputs are difficult to evaluate systematically.
+- They are not necessarily designed for production-level reliability, monitoring and scalability.
+
+FinSight AI aims to address these challenges through a combination of LLMs, RAG, Agentic AI, machine learning, data engineering and AI evaluation techniques.
+
+## 3. Learning Objectives
+
+I want this project to expose me to the following areas of AI Engineering:
+
+**A. LLM Engineering**
+- LLM fundamentals and architecture
+- Prompt engineering
+- Context windows and token management
+- Structured outputs
+- Function calling and tool calling
+- Model selection and comparison
+- Streaming and asynchronous inference
+- Error handling, retries and fallbacks
+
+**B. Generative AI and RAG**
+- Document ingestion and preprocessing
+- Text extraction and chunking strategies
+- Embeddings
+- Vector databases
+- Semantic search
+- Metadata filtering
+- Hybrid search
+- Reranking
+- Advanced RAG architectures
+- Retrieval evaluation
+- Hallucination reduction and citation generation
+
+**C. Agentic AI**
+- Agent architecture
+- Tool integration
+- Planning and task decomposition
+- Multi-agent systems
+- Agent orchestration
+- Memory management
+- State management
+- Human-in-the-loop workflows
+- Guardrails and error recovery
+
+**D. Machine Learning**
+- Statistics and probability fundamentals
+- Data preprocessing
+- Feature engineering
+- Supervised learning
+- Unsupervised learning
+- Classification and regression
+- Clustering
+- Anomaly detection
+- Model training and evaluation
+- Model inference
+
+**E. Data Engineering**
+- ETL/ELT pipelines
+- Structured and unstructured data
+- Data ingestion
+- Batch and near-real-time processing
+- Data validation and quality
+- Data Lake and Lakehouse concepts
+- Metadata and data lineage
+- SQL-based data processing
+
+**F. AI Engineering and MLOps**
+- Production-oriented AI architecture
+- Model versioning
+- Experiment tracking
+- Evaluation pipelines
+- Logging and observability
+- Model monitoring
+- CI/CD
+- Containerisation
+- Cloud deployment
+- Scalability and performance optimisation
+
+## 4. Technology Constraints
+
+I want to use **JavaScript / TypeScript exclusively. No Python.**
+
+You should recommend tools and libraries that support this constraint wherever practical.
+
+My initial technology preferences:
+
+- Language: JavaScript / TypeScript
+- Frontend: React / Next.js
+- Backend: Node.js
+- Database: PostgreSQL
+- ORM: Prisma
+- LLMs: Gemini / OpenAI APIs
+- AI frameworks: LangChain.js / LangGraph.js
+- Vector database: Qdrant / Pinecone
+- ML: TensorFlow.js
+- Cache: Redis
+- Background jobs: BullMQ
+- Testing: Jest / Vitest
+- AI observability: Langfuse
+- Containers: Docker
+- CI/CD: GitHub Actions / Jenkins
+- Cloud: AWS
+
+These are preferences, not fixed decisions. Evaluate alternatives and explain the trade-offs before finalising the stack.
+
+If a particular technology or concept is inherently better suited to Python, JVM or another runtime, explain the limitation and suggest the best JavaScript-compatible learning alternative. Do not falsely claim that a JavaScript implementation provides the same capabilities as a specialised distributed ML or data processing framework.
+
+## 5. How I Want You to Guide This Project
+
+I do not want you to immediately generate application code.
+
+First, analyse the project and create a comprehensive learning and implementation roadmap.
+
+The roadmap should:
+
+1. Divide the project into logical phases and milestones.
+2. Identify the concepts I need to learn in each phase.
+3. Explain why each concept is needed.
+4. Identify the practical features to implement.
+5. Recommend the relevant technologies and libraries.
+6. Define clear deliverables for every milestone.
+7. Include testing and evaluation criteria.
+8. Identify dependencies between different phases.
+9. Distinguish foundational concepts from advanced concepts.
+10. Include deployment and production-readiness milestones.
+
+I want to understand the underlying concepts rather than blindly integrate libraries.
+
+Whenever practical:
+- First explain the concept.
+- Then explain the architecture.
+- Then implement a basic version from scratch.
+- Finally introduce the relevant framework or library and explain what it abstracts.
+
+## 6. Teaching and Implementation Rules
+
+Follow these rules throughout our collaboration:
+
+- Teach me incrementally, one milestone at a time.
+- Do not dump the entire implementation at once.
+- Explain the reasoning behind architectural and technology decisions.
+- Prefer practical examples related to FinSight AI.
+- Provide JavaScript/TypeScript code only.
+- Explain important code blocks and design decisions.
+- Give me small implementation tasks wherever appropriate.
+- Review my implementation and point out mistakes.
+- Include edge cases, failure scenarios and debugging techniques.
+- Do not skip testing.
+- Avoid unnecessary abstraction and overengineering.
+- Maintain a running record of completed milestones and pending work.
+- Do not move to the next milestone until the current one is sufficiently understood and implemented.
+
+I also want to learn the mathematical and theoretical foundations behind ML and AI concepts. Do not treat the project as merely an API integration exercise.
+
+## 7. Quality Expectations
+
+The final application should demonstrate:
+
+- A well-designed, modular architecture.
+- Reliable document ingestion and retrieval.
+- Evidence-backed AI responses.
+- Functional agentic workflows.
+- Meaningful ML experiments.
+- Measurable AI evaluation.
+- Appropriate security and guardrails.
+- Monitoring and observability.
+- Automated testing and CI/CD.
+- Cloud deployment.
+
+The project should be technically defensible in an AI Engineer interview.
+
+## 8. Your First Task
+
+For now, do not write code.
+
+**Important:** This is a learning-first project, not a race to build an MVP. Prioritise depth of understanding, implementation quality and technical fundamentals over speed.
